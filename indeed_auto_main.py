@@ -164,5 +164,5 @@ class web_scraper:
         self.csv_create_title_comp_loc()
         self.csv_create_descr()
 
-search1 = web_scraper('Engineer','Canada')
-search1.scrape_export_title_comp_loc_descr()
+# search1 = web_scraper('Engineer','Canada')
+# search1.scrape_export_title_comp_loc_descr()
