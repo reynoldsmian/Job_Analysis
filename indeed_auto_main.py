@@ -7,15 +7,15 @@ from IPython.core.display import clear_output
 from warnings import warn
 import datetime
 
-# Scraper goes through pages in indeed and makes a csv of each company/title/location
+# Scraper goes through pages in indeed and makes a 1 csv for company/title/location and 1 for description
 
 # Input for job and location
 job = input('Enter job: ')
-if job == '':
-    job = 'Engineer'
-location = input('Enter location: ')
-if location == '':
-    location = 'Canada'
+while job == '':
+    job = input('Enter a job not a blank: ')
+location = input('Enter a location: ')
+while location == '':
+    location = input('Enter a location not a blank: ')
 
 # Collecting all of the page urls
 url_1 = ['https://www.indeed.ca/jobs?q={}&l={}'.format(job,location)]
@@ -103,6 +103,5 @@ with open('{}_{}_{}.csv'.format(job,location,current_date), 'w') as myfile1:
 with open('{}_{}_JobDescript_{}.csv'.format(job,location,current_date), 'w') as myfile2:
     wr2 = csv.writer(myfile2)
     for descr in job_descr:
-        print(descr)
         wr2.writerow([descr])
     myfile2.close()
