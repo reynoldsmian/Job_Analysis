@@ -5,6 +5,9 @@ from bs4 import BeautifulSoup
 # Import for data export
 import csv
 
+#Import for db
+import sqlite3
+
 # Imports for scraping monitor
 from random import randint
 import time
@@ -34,10 +37,11 @@ class web_scraper:
 
         self.current_date = datetime.datetime.now().strftime("%Y-%m-%d")
 
-
+    # Collect the main pages
+    # Input for how many pages you want to scrape
     def url_collect(self):
         SCRAPED_JOB_COUNT = 20
-        scraped_job_limit = int(input('\nHow many pages of jobs do you want to scrape? ')) * 20 + 1
+        scraped_job_limit = int(input('\nHow many pages of jobs do you want to scrape? (Max 50) ')) * 20 + 1
 
         self.page_list = ['https://www.indeed.ca/jobs?q={}&l={}'.format(self.job, self.location)]
 
@@ -46,6 +50,10 @@ class web_scraper:
             SCRAPED_JOB_COUNT += 20
             self.page_list.append(new_page)
 
+        print(self.page_list)
+
+    # Main scraper for title, company, location, and links for each individual job
+    # Append to title, comp, loc lists
     def title_comp_loc_scraper(self):
         # Initializing variables for monitoring
         start_time = time.time()
@@ -91,9 +99,9 @@ class web_scraper:
                                                              class_='location accessible-contrast-color-location').text.lower())
                     self.job_link_list.append('https://www.indeed.ca' + job_title[i].find('a', href=True)['href'])
 
+    # Secondary scraper for all of the descriptions
+    # Append to descr list
     def descr_scraper(self):
-        # Compiling all of the job descriptions
-
         check = input('\n{} jobs will be scraped. Continue? (y/n) '.format(len(self.job_link_list)))
         if check == 'n':
             raise SystemExit
@@ -125,7 +133,8 @@ class web_scraper:
             html_soup2 = BeautifulSoup(response2.text, 'html.parser')
             self.job_descr.append(html_soup2.find('div', class_='jobsearch-jobDescriptionText').text)
 
-    def dict_create(self):
+    # Zip comp, title, loc together and descr with generated id nums
+    def zip_create(self):
         id_num = [1]
         for i in range(len(self.titles)):
             id_num.append(id_num[i] + 1)
@@ -134,35 +143,84 @@ class web_scraper:
         self.comp_title_loc_dict = zip(id_num, self.companies, self.titles, self.locations)
         self.job_descr_dict = zip(id_num, self.job_descr)
 
+    # Optional creation of database for jobs to track jobs over time
+    def db_create(self):
+        conn = sqlite3.connect('job_main.db')
+        cur = conn.cursor()
+
+        cur.executescript('''
+       
+        CREATE TABLE IF NOT EXISTS comp_table (
+            id             INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+            comp           TEXT UNIQUE
+        );
+
+        CREATE TABLE IF NOT EXISTS loc_table (
+            id         INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+            loc            TEXT UNIQUE
+        );
+
+        CREATE TABLE IF NOT EXISTS title_table (
+            id              INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+            comp_id         INTEGER,
+            loc_id          INTEGER,
+            title           TEXT
+        )
+        
+        ''')
+
+        for entry in self.comp_title_loc_dict:
+            comp = entry[1]
+            title = entry[2]
+            loc = entry[3]
+
+            cur.execute('INSERT OR IGNORE INTO comp_table (comp) VALUES ( ? )', (comp,))
+            cur.execute('SELECT id FROM comp_table WHERE comp = ? ', (comp,))
+            comp_id = cur.fetchone()[0]
+
+            cur.execute('INSERT OR IGNORE INTO loc_table (loc) VALUES ( ? )', (loc,))
+            cur.execute('SELECT id FROM loc_table WHERE loc = ? ', (loc,))
+            loc_id = cur.fetchone()[0]
+
+            cur.execute('''INSERT OR IGNORE INTO title_table
+            (comp_id, loc_id, title) VALUES ( ?,?,? )''', (comp_id, loc_id, title))
+            cur.execute('SELECT id FROM title_table WHERE title = ? ', (title,))
+
+
+            conn.commit()
+
+    # Creating csv for title / comp / loc
     def csv_create_title_comp_loc(self):
-        # Creating csv for title / comp / loc
         with open('{}_{}_{}.csv'.format(self.job, self.location, self.current_date), 'w') as myfile1:
             wr = csv.writer(myfile1)
             for row in self.comp_title_loc_dict:
                 wr.writerow(row)
             myfile1.close()
 
+    # Creating csv for descr
     def csv_create_descr(self):
-        # Creating csv for descr
         with open('{}_{}_JobDescript_{}.csv'.format(self.job, self.location, self.current_date), 'w') as myfile2:
             wr2 = csv.writer(myfile2)
             for descr in self.job_descr:
                 wr2.writerow([descr])
             myfile2.close()
 
+    # Overall for title, comp, and loc
     def scrape_export_title_comp_loc(self):
         self.url_collect()
         self.title_comp_loc_scraper()
-        self.dict_create()
+        self.zip_create()
+        self.db_create()
         self.csv_create_descr()
 
+    # Inclusion of the job description
     def scrape_export_title_comp_loc_descr(self):
         self.url_collect()
         self.title_comp_loc_scraper()
         self.descr_scraper()
-        self.dict_create()
+        self.zip_create()
         self.csv_create_title_comp_loc()
         self.csv_create_descr()
 
-# search1 = web_scraper('Engineer','Canada')
-# search1.scrape_export_title_comp_loc_descr()
+search1 = web_scraper('Engineer','Canada')
+search1.scrape_export_title_comp_loc()
