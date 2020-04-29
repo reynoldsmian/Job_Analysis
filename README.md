@@ -21,25 +21,25 @@ Future Work:
 
 # Packages:
 Main scraper:
-requests
-bs4
-csv
-sqlite3
-random
-time
-datetime
-IPython.core.display
-warnings
+ - requests
+ - bs4
+ - csv
+ - sqlite3
+ - random
+ - time
+ - datetime
+ - IPython.core.display
+ - warnings
 
 Description Breakdown:
-nltk.tokenize
-nltk.corpus
+ - nltk.tokenize
+ - nltk.corpus
 
 Notebook:
-numpy
-pandas
-matplotlib
-seaborn
-certifi
-ssl
-geopy
+ - numpy
+ - pandas
+ - matplotlib
+ - seaborn
+ - certifi
+ - ssl
+ - geopy
