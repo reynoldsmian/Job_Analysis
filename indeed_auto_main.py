@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 # Import for data export
 import csv
 
-#Import for db
+# Import for db
 import sqlite3
 
 # Imports for scraping monitor
@@ -40,14 +40,15 @@ class web_scraper:
     # Collect the main pages
     # Input for how many pages you want to scrape
     def url_collect(self):
-        SCRAPED_JOB_COUNT = 20
+        scraped_job_count = 20
         scraped_job_limit = int(input('\nHow many pages of jobs do you want to scrape? (Max 50) ')) * 20 + 1
 
         self.page_list = ['https://www.indeed.ca/jobs?q={}&l={}'.format(self.job, self.location)]
 
-        while SCRAPED_JOB_COUNT < scraped_job_limit:
-            new_page = 'https://www.indeed.ca/jobs?q={}&l={}&start={}'.format(self.job, self.location, SCRAPED_JOB_COUNT)
-            SCRAPED_JOB_COUNT += 20
+        while scraped_job_count < scraped_job_limit:
+            new_page = 'https://www.indeed.ca/jobs?q={}&l={}&start={}'.format(self.job, self.location,
+                                                                              scraped_job_count)
+            scraped_job_count += 20
             self.page_list.append(new_page)
 
     # Main scraper for title, company, location, and links for each individual job
@@ -74,7 +75,7 @@ class web_scraper:
             if response.status_code != 200:
                 warn('Request: {}; Status code: {}'.format(requests, response.status_code))
             # Break setting for max amount of requests
-            if requests >1000:
+            if requests > 1000:
                 warn('Number of requests was greater than expected.')
                 break
 
@@ -91,10 +92,10 @@ class web_scraper:
                     self.companies.append(job_company[i].find('span', class_='company').text.lower().strip())
                     try:
                         self.locations.append(job_company[i].find('div',
-                                                             class_='location accessible-contrast-color-location').text.lower())
+                                                                  class_='location accessible-contrast-color-location').text.lower())
                     except:
                         self.locations.append(job_company[i].find('span',
-                                                             class_='location accessible-contrast-color-location').text.lower())
+                                                                  class_='location accessible-contrast-color-location').text.lower())
                     self.job_link_list.append('https://www.indeed.ca' + job_title[i].find('a', href=True)['href'])
 
     # Secondary scraper for all of the descriptions
@@ -137,40 +138,42 @@ class web_scraper:
         for i in range(len(self.titles)):
             id_num.append(id_num[i] + 1)
 
-        # Creating a dict of all scraped data
+        # Creating a iterable of all scraped data
         self.comp_title_loc_dict = zip(id_num, self.companies, self.titles, self.locations)
         self.job_descr_dict = zip(id_num, self.job_descr)
 
-    # Optional creation of database for jobs to track jobs over time
-    def db_create(self):
+    def db_create(self, ):
         conn = sqlite3.connect('job_main.db')
         cur = conn.cursor()
 
         cur.executescript('''
-       
-        CREATE TABLE IF NOT EXISTS comp_table (
-            id             INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-            comp           TEXT UNIQUE
-        );
 
-        CREATE TABLE IF NOT EXISTS loc_table (
-            id             INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-            loc            TEXT UNIQUE
-        );
+            CREATE TABLE IF NOT EXISTS title_table (
+                job_id          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+                comp_id         INTEGER,
+                loc_id          INTEGER,
+                title           TEXT,
+                scrape_date     TEXT,
+                unique(comp_id, loc_id, title)
+            );
 
-        CREATE TABLE IF NOT EXISTS title_table (
-            job_id          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-            comp_id         INTEGER,
-            loc_id          INTEGER,
-            title           TEXT
-        )
-        
-        ''')
+            CREATE TABLE IF NOT EXISTS comp_table (
+                id             INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+                comp           TEXT UNIQUE
+            );
+
+            CREATE TABLE IF NOT EXISTS loc_table (
+                id             INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+                loc            TEXT UNIQUE
+            );
+            
+            ''')
 
         for entry in self.comp_title_loc_dict:
             comp = entry[1]
             title = entry[2]
             loc = entry[3]
+            date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 
             cur.execute('INSERT OR IGNORE INTO comp_table (comp) VALUES ( ? )', (comp,))
             cur.execute('SELECT id FROM comp_table WHERE comp = ? ', (comp,))
@@ -181,14 +184,14 @@ class web_scraper:
             loc_id = cur.fetchone()[0]
 
             cur.execute('''INSERT OR IGNORE INTO title_table
-            (comp_id, loc_id, title) VALUES ( ?,?,? )''', (comp_id, loc_id, title))
+                (comp_id, loc_id, title, scrape_date) VALUES ( ?,?,?,? )''', (comp_id, loc_id, title, date))
             cur.execute('SELECT job_id FROM title_table WHERE title = ? ', (title,))
 
             conn.commit()
 
     # Creating csv for title / comp / loc
     def csv_create_title_comp_loc(self):
-        with open('{}_{}_{}.csv'.format(self.job, self.location, self.current_date), 'w') as myfile1:
+        with open('scrape_csvs/{}_{}_{}.csv'.format(self.job, self.location, self.current_date), 'w') as myfile1:
             wr = csv.writer(myfile1)
             for row in self.comp_title_loc_dict:
                 wr.writerow(row)
@@ -196,7 +199,7 @@ class web_scraper:
 
     # Creating csv for descr
     def csv_create_descr(self):
-        with open('{}_{}_JobDescript_{}.csv'.format(self.job, self.location, self.current_date), 'w') as myfile2:
+        with open('scrape_csvs/{}_{}_JobDescript_{}.csv'.format(self.job, self.location, self.current_date), 'w') as myfile2:
             wr2 = csv.writer(myfile2)
             for descr in self.job_descr:
                 wr2.writerow([descr])
@@ -206,6 +209,8 @@ class web_scraper:
     def scrape_export_title_comp_loc(self):
         self.url_collect()
         self.title_comp_loc_scraper()
+        self.zip_create()
+        self.db_create()
         self.zip_create()
         self.csv_create_title_comp_loc()
 
@@ -217,3 +222,11 @@ class web_scraper:
         self.zip_create()
         self.csv_create_title_comp_loc()
         self.csv_create_descr()
+
+job = 'Engineer'
+location = 'Canada'
+main_file = '{}_{}_{}.csv'.format(job, location, datetime.datetime.now().strftime("%Y-%m-%d"))
+descr_file = '{}_{}_JobDescript_{}.csv'.format(job, location, datetime.datetime.now().strftime("%Y-%m-%d"))
+
+search1 = web_scraper(job,location)
+search1.scrape_export_title_comp_loc()
