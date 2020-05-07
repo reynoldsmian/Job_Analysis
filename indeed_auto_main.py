@@ -222,11 +222,3 @@ class web_scraper:
         self.zip_create()
         self.csv_create_title_comp_loc()
         self.csv_create_descr()
-
-job = 'Engineer'
-location = 'Canada'
-main_file = '{}_{}_{}.csv'.format(job, location, datetime.datetime.now().strftime("%Y-%m-%d"))
-descr_file = '{}_{}_JobDescript_{}.csv'.format(job, location, datetime.datetime.now().strftime("%Y-%m-%d"))
-
-search1 = web_scraper(job,location)
-search1.scrape_export_title_comp_loc()
