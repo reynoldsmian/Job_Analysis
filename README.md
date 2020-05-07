@@ -1,19 +1,21 @@
 # Posted-Job-Analysis
 
-Idea behind the project:
-Job Description Keyword Search
- - Currently there is a large number of people turning to online learning. This trend will slow, but continue once social distancing ends. With the large amount of offerings, one of the most difficult tasks that faces students is what courses to take/ what to learn. One of the best ways to decide on what to learn is to analyze what skills companies are pursuing in applicants. This project gives a tool to compare how often skills are mentioned across the job market.
+The idea for this project stemmed from the experiences I have had during my job search:
 
- General Analysis:
- - There is no easy way to visualize trends on the job market. Sites such as indeed have the postings, but do not allow for analysis and visualization. This project will allow visualization of where the jobs are located, what companies are hiring, and what positions are needed.
+ - Companies now rely heavily on ATS to filter applicants. Analyzing keyword matches on a job to job basis is easy, but what are the general trends/ common skills. If you look at a macro level for a certain job/location you can ensure your template resume contains the necessary keywords, which would help limit job to job tuning.
+ - Currently there is a large number of people turning to online learning. With the large amount of offerings, one of the most difficult tasks that faces students is what courses to take/ what to learn. One of the best ways to decide on what to learn is to analyze what skills companies are pursuing in applicants.
+ - There is no easy way to visualize trends on the job market (ie. how many companies are hiring? / is job hiring on the rise? / what are the best geographic areas for certain jobs?) Sites such as indeed have the postings, but do not allow for analysis and visualization.
 
- Steps:
+Objective:
+ Create a tool that can scrape job titles, locations, companies, and descriptions off of a major job posting site and analyze/ visualize the results.
+
+Steps:
  - Create a job scraper to pull all job titles/companies/locations
  - Add functionality to the scraper to obtain all of the job descriptions
- - Create a notebook for easy analysis of jobs
+ - Create a database to store all of the data
+ - Create a notebook for easy analysis of jobs (including mapping, geographical analysis, keyword search, job title search)
 
 Future Work:
- - Add database functionality to store jobs/ track trends over time
  - geopy/Nominatim should be replaced for time-out issues
  - Create a web app for easy visualization
 
