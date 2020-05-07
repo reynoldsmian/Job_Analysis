@@ -9,7 +9,7 @@ import csv
 import sqlite3
 
 # Imports for scraping monitor
-from random import randint
+import random
 import time
 import datetime
 from IPython.core.display import clear_output
@@ -50,8 +50,6 @@ class web_scraper:
             SCRAPED_JOB_COUNT += 20
             self.page_list.append(new_page)
 
-        print(self.page_list)
-
     # Main scraper for title, company, location, and links for each individual job
     # Append to title, comp, loc lists
     def title_comp_loc_scraper(self):
@@ -66,7 +64,7 @@ class web_scraper:
             response = get(url)
 
             # Temp wait
-            time.sleep(randint(1, 2))
+            time.sleep(random.random())
             # Monitoring the requests / request rate
             requests += 1
             elapsed_time = time.time() - start_time
@@ -76,14 +74,14 @@ class web_scraper:
             if response.status_code != 200:
                 warn('Request: {}; Status code: {}'.format(requests, response.status_code))
             # Break setting for max amount of requests
-            if requests > 72:
+            if requests >1000:
                 warn('Number of requests was greater than expected.')
                 break
 
             html_soup = BeautifulSoup(response.text, 'html.parser')
 
             # Scrape title and company box
-            job_title = html_soup.find_all('div', class_="title")
+            job_title = html_soup.find_all('h2', class_="title")
             job_company = html_soup.find_all('div', class_="sjcl")
 
             # Compile lists for company, location, and link to job description
@@ -116,7 +114,7 @@ class web_scraper:
             response2 = get(url)
 
             # Temp wait
-            time.sleep(randint(1,2))
+            time.sleep(random.random())
             # Monitoring the requests / request rate
             requests += 1
             elapsed_time = time.time() - start_time
@@ -126,7 +124,7 @@ class web_scraper:
             if response2.status_code != 200:
                 warn('Request: {}; Status code: {}'.format(requests, response2.status_code))
             # Break setting for max amount of requests
-            if requests > 72:
+            if requests > 1000:
                 warn('Number of requests was greater than expected.')
                 break
 
@@ -156,12 +154,12 @@ class web_scraper:
         );
 
         CREATE TABLE IF NOT EXISTS loc_table (
-            id         INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+            id             INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
             loc            TEXT UNIQUE
         );
 
         CREATE TABLE IF NOT EXISTS title_table (
-            id              INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+            job_id          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
             comp_id         INTEGER,
             loc_id          INTEGER,
             title           TEXT
@@ -184,8 +182,7 @@ class web_scraper:
 
             cur.execute('''INSERT OR IGNORE INTO title_table
             (comp_id, loc_id, title) VALUES ( ?,?,? )''', (comp_id, loc_id, title))
-            cur.execute('SELECT id FROM title_table WHERE title = ? ', (title,))
-
+            cur.execute('SELECT job_id FROM title_table WHERE title = ? ', (title,))
 
             conn.commit()
 
@@ -210,8 +207,7 @@ class web_scraper:
         self.url_collect()
         self.title_comp_loc_scraper()
         self.zip_create()
-        self.db_create()
-        self.csv_create_descr()
+        self.csv_create_title_comp_loc()
 
     # Inclusion of the job description
     def scrape_export_title_comp_loc_descr(self):
@@ -221,6 +217,3 @@ class web_scraper:
         self.zip_create()
         self.csv_create_title_comp_loc()
         self.csv_create_descr()
-
-search1 = web_scraper('Engineer','Canada')
-search1.scrape_export_title_comp_loc()
